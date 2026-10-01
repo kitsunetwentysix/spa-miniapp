@@ -9,11 +9,14 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command, CommandStart
-from aiogram.types import MenuButtonWebApp, Message, ReplyKeyboardRemove, User, WebAppInfo
+from aiogram.filters import Command, CommandObject, CommandStart
+from aiogram.types import (BotCommand, BotCommandScopeChat, BufferedInputFile, MenuButtonWebApp,
+                           Message, ReplyKeyboardRemove, User, WebAppInfo)
 from aiogram.utils.web_app import safe_parse_webapp_init_data
 from aiohttp import web
 from dotenv import load_dotenv
+
+import db
 
 load_dotenv()
 
@@ -50,24 +53,94 @@ async def my_id(message: Message) -> None:
     await message.answer(f"Твой chat id: {message.chat.id}\nВставь его в .env как OWNER_ID")
 
 
-async def deliver_order(user: User | None, order: dict) -> None:
-    """Подтверждает заказ гостье и присылает его владельцу."""
+async def deliver_order(user: User | None, order: dict, source: str) -> None:
+    """Сохраняет заказ в базу, подтверждает его гостье и присылает владельцу."""
+    # У WebAppUser (кнопка Open) нет full_name, поэтому собираем имя сами
+    name = " ".join(filter(None, [user.first_name, user.last_name])) if user else ""
+    name = name or "Она"
+    now = datetime.now(TIMEZONE)
+    # Сначала база: так заказ не потеряется, даже если Telegram не ответит
+    order_id = db.add_order(
+        created_at=now.isoformat(timespec="seconds"),
+        user_id=user.id if user else None,
+        name=name,
+        username=user.username if user else None,
+        order=order,
+        source=source,
+    )
+    logging.info("Заказ №%s сохранён", order_id)
+
     if user:
         await bot.send_message(user.id, "Записала тебя на spa-вечер 💌 Скоро всё будет готово!")
     if not OWNER_ID:
         return
-    # У WebAppUser (кнопка Open) нет full_name, поэтому собираем имя сами
-    name = " ".join(filter(None, [user.first_name, user.last_name])) if user else ""
-    name = name or "Она"
     username = f" (@{user.username})" if user and user.username else ""
-    received = datetime.now(TIMEZONE).strftime("%d.%m %H:%M")
     await bot.send_message(
         OWNER_ID,
-        f"🕯 Новый заказ на spa-вечер\n"
+        f"🕯 Новый заказ №{order_id} на spa-вечер\n"
         f"От: {name}{username}\n"
-        f"Получен: {received}\n"
+        f"Получен: {now:%d.%m %H:%M}\n"
         f"Начало: {order.get('start', '—')}\n\n"
         f"{order.get('text', '')}",
+    )
+
+
+# ---------- Команды владельца: база заказов ----------
+
+def is_owner(message: Message) -> bool:
+    return bool(OWNER_ID) and message.chat.id == OWNER_ID
+
+
+def short_line(row) -> str:
+    """Одна строка списка: №, дата вечера, время, имя, сколько процедур."""
+    date = row["event_date"] or ""
+    date = f"{date[8:10]}.{date[5:7]}" if len(date) == 10 else "—"
+    count = len(json.loads(row["procedures"] or "[]"))
+    return f"№{row['id']} · {date} в {row['start_time'] or '—'} · {row['name']} · процедур: {count}"
+
+
+@dp.message(Command("orders"), is_owner)
+async def cmd_orders(message: Message) -> None:
+    rows = db.last_orders(10)
+    if not rows:
+        await message.answer("Заказов пока нет.")
+        return
+    total = db.count_orders()
+    lines = [f"📋 Последние заказы (всего {total}):", ""]
+    lines += [short_line(r) for r in rows]
+    lines += ["", "Полный заказ: /order номер, например /order " + str(rows[0]["id"]),
+              "Все заказы файлом: /export"]
+    await message.answer("\n".join(lines))
+
+
+@dp.message(Command("order"), is_owner)
+async def cmd_order(message: Message, command: CommandObject) -> None:
+    if not command.args or not command.args.strip().isdigit():
+        await message.answer("Укажи номер заказа, например: /order 1")
+        return
+    row = db.get_order(int(command.args))
+    if not row:
+        await message.answer(f"Заказа №{command.args.strip()} нет.")
+        return
+    created = datetime.fromisoformat(row["created_at"]).strftime("%d.%m.%Y %H:%M")
+    username = f" (@{row['username']})" if row["username"] else ""
+    await message.answer(
+        f"🕯 Заказ №{row['id']}\n"
+        f"От: {row['name']}{username}\n"
+        f"Получен: {created}\n\n"
+        f"{row['text']}"
+    )
+
+
+@dp.message(Command("export"), is_owner)
+async def cmd_export(message: Message) -> None:
+    if not db.count_orders():
+        await message.answer("Заказов пока нет.")
+        return
+    stamp = datetime.now(TIMEZONE).strftime("%Y-%m-%d")
+    await message.answer_document(
+        BufferedInputFile(db.export_csv(), filename=f"spa-orders-{stamp}.csv"),
+        caption="Все заказы. Открывается в Excel или Google Таблицах.",
     )
 
 
@@ -76,7 +149,7 @@ async def deliver_order(user: User | None, order: dict) -> None:
 async def got_order_from_keyboard(message: Message) -> None:
     order = json.loads(message.web_app_data.data)
     logging.info("Заказ через sendData: %s", order)
-    await deliver_order(message.from_user, order)
+    await deliver_order(message.from_user, order, source="keyboard")
 
 
 # ---------- Веб-API для кнопки Open ----------
@@ -105,7 +178,7 @@ async def order_post(request: web.Request) -> web.Response:
         return cors(web.json_response({"ok": False}, status=400))
 
     logging.info("Заказ через Open от %s: %s", init.user.id if init.user else "?", order)
-    await deliver_order(init.user, order)
+    await deliver_order(init.user, order, source="open")
     return cors(web.json_response({"ok": True}))
 
 
@@ -123,11 +196,23 @@ async def start_api() -> web.AppRunner:
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
+    db.init_db()
     if not OWNER_ID:
         logging.warning("OWNER_ID не задан: заказы не будут пересылаться. Напиши боту /id")
 
     # Кнопка Open слева от поля ввода у всех пользователей бота
     await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Open", web_app=WebAppInfo(url=WEBAPP_URL)))
+
+    # Подсказки команд видит только владелец
+    if OWNER_ID:
+        await bot.set_my_commands(
+            [
+                BotCommand(command="orders", description="Последние заказы"),
+                BotCommand(command="order", description="Заказ по номеру: /order 1"),
+                BotCommand(command="export", description="Все заказы файлом CSV"),
+            ],
+            scope=BotCommandScopeChat(chat_id=OWNER_ID),
+        )
 
     runner = await start_api()
     try:
