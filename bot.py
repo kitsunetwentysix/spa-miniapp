@@ -39,8 +39,8 @@ dp = Dispatcher()
 @dp.message(CommandStart())
 async def start(message: Message) -> None:
     await message.answer(
-        "Привет! Приглашаю тебя на домашний spa-вечер 🕯\n"
-        "Нажми кнопку Open внизу и выбери всё, чего хочется.",
+        "Привет! Меня зовут Бегемотик Ботик и я твой персональный ассистент! "
+        "Нажми кнопку Open и выбери всё, чего тебе хочется ❤️",
         reply_markup=ReplyKeyboardRemove(),  # убираем старую кнопку под полем ввода
     )
 
