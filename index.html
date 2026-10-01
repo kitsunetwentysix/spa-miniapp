@@ -100,7 +100,6 @@ textarea { min-height: 90px; resize: vertical; }
 .note { margin-top: 14px; font-style: italic; font-family: var(--display); font-size: 19px; color: var(--rose); }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .status { color: var(--muted); font-size: 13px; margin-top: 10px; min-height: 1.2em; }
-#copybox { width: 100%; margin-top: 10px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 420px) { .btn { padding: 12px 16px; } .sum b { font-size: 22px; } }
@@ -249,18 +248,17 @@ function planText(p) {
 
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const tg = window.Telegram?.WebApp;
-const inTelegram = !!(tg && tg.initData);
-let currentText = "";
+// При запуске кнопкой под полем ввода initData пустой, поэтому смотрим на platform
+const inTelegram = !!(tg && tg.platform && tg.platform !== "unknown");
 let planShown = false;
 
 function showPlan() {
   const p = buildPlan();
-  currentText = planText(p);
   planShown = true;
   const wrap = document.getElementById("ticketWrap");
   wrap.innerHTML = `
     <div class="ticket" id="ticket">
-      <div class="eyebrow">Почти готово</div>
+      <div class="eyebrow">Проверь заказ</div>
       <h2>Твоя программа</h2>
       <div class="meta">Аромат: ${esc(aroma)} · с ${clock(p.steps[0]?.at ?? 0)} до ${clock(p.end)}</div>
       <ul class="flow">
@@ -269,25 +267,21 @@ function showPlan() {
       </ul>
       ${p.wish ? `<div class="note">«${esc(p.wish)}»</div>` : ""}
       <div class="actions">
-        ${inTelegram ? "" : '<button class="btn" id="copy">Скопировать текст</button>'}
+        <button class="btn" id="confirm">Да, всё верно</button>
         <button class="btn ghost" id="edit">Изменить выбор</button>
       </div>
-      <div class="status" id="status">${inTelegram ? "Нажми «Отправить» внизу, и я получу твой выбор." : ""}</div>
-      <textarea id="copybox" readonly hidden></textarea>
+      <div class="status" id="status"></div>
     </div>`;
   document.getElementById("ticket").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   document.getElementById("edit").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
-  const copy = document.getElementById("copy");
-  if (copy) copy.onclick = async () => {
-    const st = document.getElementById("status");
-    try { await navigator.clipboard.writeText(currentText); st.textContent = "Скопировано."; }
-    catch { const box = document.getElementById("copybox"); box.hidden = false; box.value = currentText; box.select(); st.textContent = "Выдели текст ниже и скопируй вручную."; }
-  };
+  document.getElementById("confirm").onclick = sendToBot;
   syncMainButton();
 }
 
 // Отправка боту. Работает, только если Mini App открыт кнопкой под полем ввода (reply-клавиатура)
 function sendToBot() {
+  const st = document.getElementById("status");
+  if (!inTelegram) { st.textContent = "Открой это меню через бота в Telegram, тогда заказ уйдёт автоматически."; return; }
   const p = buildPlan();
   const payload = JSON.stringify({
     text: planText(p),
@@ -295,15 +289,20 @@ function sendToBot() {
     aroma, start: document.getElementById("start").value,
   });
   tg.HapticFeedback?.notificationOccurred("success");
-  tg.sendData(payload); // после этого Telegram сам закроет приложение
+  try {
+    tg.sendData(payload); // после этого Telegram сам закроет приложение
+  } catch {
+    st.textContent = "Не получилось отправить. Закрой меню и открой его кнопкой «Выбрать процедуры» под полем ввода.";
+  }
 }
 
+// Нативная кнопка Telegram только собирает программу; подтверждение — кнопкой «Да, всё верно»
 function syncMainButton() {
   if (!inTelegram) return;
   const n = chosen().length;
-  if (!n) { tg.MainButton.hide(); return; }
+  if (!n || planShown) { tg.MainButton.hide(); return; }
   tg.MainButton.setParams({
-    text: planShown ? "Отправить 💌" : `Собрать программу (${n})`,
+    text: `Записаться (${n})`,
     color: "#e9a3b8", text_color: "#2a1420", is_visible: true, is_active: true,
   });
 }
@@ -322,7 +321,7 @@ if (inTelegram) {
   tg.expand();
   tg.setHeaderColor?.("#1d1420");
   tg.setBackgroundColor?.("#1d1420");
-  tg.MainButton.onClick(() => (planShown ? sendToBot() : showPlan()));
+  tg.MainButton.onClick(showPlan);
 }
 updateBar();
 </script>
