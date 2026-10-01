@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Spa-вечер для двоих</title>
+<title>Бегемотик Ботик</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,8 +26,9 @@
 * { box-sizing: border-box; }
 html, body { background: var(--bg); color: var(--fg); }
 body {
+  margin: 0;
   font-family: var(--body); font-size: 15px; line-height: 1.55;
-  padding-inline: 16px; padding-block: 0 140px;
+  padding-inline: 16px; padding-block: 0 48px;
   background:
     radial-gradient(60rem 30rem at 85% -10%, color-mix(in srgb, var(--glow) 14%, transparent), transparent 70%),
     radial-gradient(40rem 30rem at -10% 30%, color-mix(in srgb, var(--rose) 10%, transparent), transparent 70%),
@@ -35,7 +36,7 @@ body {
   background-attachment: fixed;
 }
 .wrap { max-width: 720px; margin: 0 auto; }
-header { padding-block: 48px 24px; }
+header { padding-block: 24px; }
 .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--glow); font-weight: 600; }
 h1 { font-family: var(--display); font-weight: 500; font-size: clamp(40px, 9vw, 64px); line-height: 1.02; margin: 10px 0 14px; text-wrap: balance; }
 h1 em { color: var(--rose); }
@@ -102,12 +103,171 @@ textarea { min-height: 90px; resize: vertical; }
 @media (max-width: 420px) { .btn { padding: 12px 16px; } .sum b { font-size: 22px; } }
 /* Внутри Telegram кнопку заменяет нативная MainButton */
 body.tg .bar .btn { display: none; }
-body.tg { padding-block-end: 90px; }
+body.on-spa { padding-block-end: 140px; }
+body.tg.on-spa { padding-block-end: 90px; }
+
+/* Главный экран ассистента */
+.home-head { padding-block: 40px 28px; display: grid; gap: 18px; justify-items: start; }
+.ava { width: 104px; height: 104px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 4px color-mix(in srgb, var(--rose) 35%, transparent), 0 12px 40px color-mix(in srgb, var(--rose) 25%, transparent); }
+.ava svg { width: 100%; height: 100%; display: block; }
+.home-head h1 { margin: 6px 0 10px; }
+.services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.service {
+  display: grid; align-content: start; gap: 10px; text-align: left; min-height: 172px;
+  padding: 18px 16px; border-radius: 18px; font: inherit; color: var(--fg);
+  border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 85%, transparent);
+}
+.service .ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
+.service .ico svg { width: 24px; height: 24px; }
+.service h3 { font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.1; margin: 0; }
+.service p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.service.live { cursor: pointer; border-color: var(--rose); background: linear-gradient(160deg, color-mix(in srgb, var(--rose) 22%, var(--panel)), var(--panel) 70%); transition: transform .2s; }
+.service.live:hover { transform: translateY(-2px); }
+.service.live .ico { background: var(--rose); color: var(--on-rose); }
+.service.live .go { color: var(--rose); font-weight: 700; font-size: 13px; margin-top: auto; }
+.service.soon { border-style: dashed; opacity: .7; cursor: default; }
+.service.soon .ico { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); }
+.service.soon .tag { margin-top: auto; justify-self: start; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; }
+.back { margin-top: 20px; background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; padding: 0; }
+body.tg .back { display: none; }
+@media (max-width: 340px) { .services { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
+<div id="home">
+  <div class="wrap">
+    <header class="home-head">
+      <div class="ava"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#ffe3ec"/>
+      <stop offset="1" stop-color="#f4a9c0"/>
+    </radialGradient>
+    <radialGradient id="skin" cx="45%" cy="35%" r="75%">
+      <stop offset="0" stop-color="#c9b8e6"/>
+      <stop offset="1" stop-color="#9f8bc7"/>
+    </radialGradient>
+    <radialGradient id="snout" cx="50%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#e6dbf5"/>
+      <stop offset="1" stop-color="#c7b6e3"/>
+    </radialGradient>
+    <linearGradient id="towel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f6dbe5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- фон -->
+  <rect width="640" height="640" fill="url(#bg)"/>
+  <g fill="#ffffff" opacity=".55">
+    <circle cx="92" cy="170" r="16"/><circle cx="120" cy="128" r="8"/>
+    <circle cx="556" cy="430" r="12"/><circle cx="580" cy="392" r="6"/>
+    <circle cx="70" cy="420" r="9"/>
+  </g>
+  <!-- искорки -->
+  <g fill="#ffffff">
+    <path d="M540 120 l7 20 20 7 -20 7 -7 20 -7 -20 -20 -7 20 -7z"/>
+    <path d="M100 520 l5 14 14 5 -14 5 -5 14 -5 -14 -14 -5 14 -5z" opacity=".8"/>
+  </g>
+
+  <!-- халат -->
+  <path d="M110 640 C120 560 200 520 320 520 C440 520 520 560 530 640 Z" fill="#ffffff"/>
+  <path d="M110 640 C120 560 200 520 320 520 C440 520 520 560 530 640 Z" fill="none" stroke="#f0c7d6" stroke-width="6"/>
+  <path d="M250 528 L320 640 L390 528 C370 560 340 575 320 600 C300 575 270 560 250 528 Z" fill="url(#skin)"/>
+  <path d="M232 532 L320 640 M408 532 L320 640" stroke="#f3bccd" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- уши -->
+  <ellipse cx="160" cy="250" rx="34" ry="42" fill="#9f8bc7" transform="rotate(-25 160 250)"/>
+  <ellipse cx="160" cy="252" rx="18" ry="24" fill="#f2a7bf" transform="rotate(-25 160 252)"/>
+  <ellipse cx="480" cy="250" rx="34" ry="42" fill="#9f8bc7" transform="rotate(25 480 250)"/>
+  <ellipse cx="480" cy="252" rx="18" ry="24" fill="#f2a7bf" transform="rotate(25 480 252)"/>
+
+  <!-- голова -->
+  <ellipse cx="320" cy="345" rx="185" ry="170" fill="url(#skin)"/>
+
+  <!-- полотенце-тюрбан -->
+  <path d="M138 270 C130 160 220 95 320 95 C420 95 510 160 502 270 C450 225 390 212 320 212 C250 212 190 225 138 270 Z" fill="url(#towel)"/>
+  <path d="M175 210 C240 175 400 175 465 210" fill="none" stroke="#f0c7d6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M160 245 C230 205 410 205 480 245" fill="none" stroke="#f0c7d6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M265 120 C290 60 360 55 380 100 C350 85 320 95 300 125 Z" fill="#ffffff" stroke="#f0c7d6" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- цветок на полотенце -->
+  <g transform="translate(445 165)">
+    <g fill="#ff7fa3">
+      <ellipse cx="0" cy="-24" rx="15" ry="22"/>
+      <ellipse cx="0" cy="-24" rx="15" ry="22" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-24" rx="15" ry="22" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-24" rx="15" ry="22" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-24" rx="15" ry="22" transform="rotate(288)"/>
+    </g>
+    <circle r="11" fill="#ffd36e"/>
+  </g>
+
+  <!-- щёки -->
+  <ellipse cx="185" cy="385" rx="34" ry="22" fill="#ff8fb0" opacity=".55"/>
+  <ellipse cx="455" cy="385" rx="34" ry="22" fill="#ff8fb0" opacity=".55"/>
+
+  <!-- глаза -->
+  <g>
+    <ellipse cx="248" cy="315" rx="33" ry="38" fill="#ffffff"/>
+    <ellipse cx="254" cy="322" rx="20" ry="25" fill="#3b2a52"/>
+    <circle cx="262" cy="311" r="8" fill="#ffffff"/>
+    <circle cx="247" cy="333" r="4" fill="#ffffff"/>
+    <path d="M214 296 l-16 -12 M222 284 l-10 -16 M236 278 l-4 -18" stroke="#3b2a52" stroke-width="6" stroke-linecap="round"/>
+
+    <ellipse cx="392" cy="315" rx="33" ry="38" fill="#ffffff"/>
+    <ellipse cx="386" cy="322" rx="20" ry="25" fill="#3b2a52"/>
+    <circle cx="394" cy="311" r="8" fill="#ffffff"/>
+    <circle cx="379" cy="333" r="4" fill="#ffffff"/>
+    <path d="M426 296 l16 -12 M418 284 l10 -16 M404 278 l4 -18" stroke="#3b2a52" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- морда -->
+  <ellipse cx="320" cy="440" rx="140" ry="88" fill="url(#snout)"/>
+  <ellipse cx="275" cy="415" rx="13" ry="10" fill="#7d6a9e"/>
+  <ellipse cx="365" cy="415" rx="13" ry="10" fill="#7d6a9e"/>
+  <path d="M262 462 C290 492 350 492 378 462" fill="none" stroke="#5a4778" stroke-width="7" stroke-linecap="round"/>
+  <path d="M300 482 C305 500 335 500 340 482 Z" fill="#ff8fb0"/>
+</svg></div>
+      <div>
+        <div class="eyebrow">Персональный ассистент</div>
+        <h1>Бегемотик <em>Ботик</em></h1>
+        <p class="lead">Привет! Я помогу устроить для тебя что-нибудь приятное. Выбери, с чего начнём.</p>
+      </div>
+    </header>
+    <div class="services">
+      <button class="service live" id="open-spa" type="button">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.6 2 2.4 3.4 2.4 4.6A2.4 2.4 0 0 1 12 10a2.4 2.4 0 0 1-2.4-2.4C9.6 6.4 10.4 5 12 3Z"/><rect x="8" y="12" width="8" height="9" rx="1.5"/><path d="M12 10v2"/></svg></span>
+        <h3>Домашний spa-вечер</h3>
+        <p>Процедуры, угощения и программа по времени</p>
+        <span class="go">Выбрать процедуры →</span>
+      </button>
+      <div class="service soon" aria-disabled="true">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+        <h3>В разработке</h3>
+        <p>Скоро здесь появится новая услуга</p>
+        <span class="tag">скоро</span>
+      </div>
+      <div class="service soon" aria-disabled="true">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+        <h3>В разработке</h3>
+        <p>Скоро здесь появится новая услуга</p>
+        <span class="tag">скоро</span>
+      </div>
+      <div class="service soon" aria-disabled="true">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+        <h3>В разработке</h3>
+        <p>Скоро здесь появится новая услуга</p>
+        <span class="tag">скоро</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="spa" hidden>
 <div class="wrap">
+  <button class="back" id="back" type="button">← Все услуги</button>
   <header>
     <div class="eyebrow">Домашний салон · только для тебя</div>
     <h1>Spa-вечер <em>для двоих</em></h1>
@@ -142,6 +302,7 @@ body.tg { padding-block-end: 90px; }
     <div class="sum"><b id="total">0 мин</b><small id="count">Пока ничего не выбрано</small></div>
     <button class="btn" id="done" disabled>Записаться</button>
   </div>
+</div>
 </div>
 
 <script>
@@ -245,6 +406,9 @@ function planText(p) {
   return lines.join("\n");
 }
 
+// Адрес сервера, куда уходят заказы. Замени 1-2-3-4 на IP своего VPS через дефисы
+const API_URL = "https://89-208-104-140.sslip.io/order";
+
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const tg = window.Telegram?.WebApp;
 // При запуске кнопкой под полем ввода initData пустой, поэтому смотрим на platform
@@ -277,21 +441,36 @@ function showPlan() {
   syncMainButton();
 }
 
-// Отправка боту. Работает, только если Mini App открыт кнопкой под полем ввода (reply-клавиатура)
-function sendToBot() {
+// Открыто через кнопку Open: initData есть, заказ уходит на сервер.
+// Открыто кнопкой под полем ввода: initData пустой, работает sendData.
+async function sendToBot() {
   const st = document.getElementById("status");
+  const btn = document.getElementById("confirm");
   if (!inTelegram) { st.textContent = "Открой это меню через бота в Telegram, тогда заказ уйдёт автоматически."; return; }
   const p = buildPlan();
-  const payload = JSON.stringify({
+  const order = {
     text: planText(p),
     procedures: [...p.steps.map(s => s.it.id), ...p.treats.map(t => t.id)],
     date: dateEl.value, start: document.getElementById("start").value,
-  });
-  tg.HapticFeedback?.notificationOccurred("success");
+  };
+  if (!tg.initData) {
+    tg.HapticFeedback?.notificationOccurred("success");
+    tg.sendData(JSON.stringify(order)); // после этого Telegram сам закроет приложение
+    return;
+  }
+  btn.disabled = true;
+  st.textContent = "Отправляю…";
   try {
-    tg.sendData(payload); // после этого Telegram сам закроет приложение
+    // text/plain, чтобы браузер не делал лишний предварительный запрос
+    const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ initData: tg.initData, order }) });
+    if (!res.ok) throw new Error(res.status);
+    tg.HapticFeedback?.notificationOccurred("success");
+    st.textContent = "Заказ отправлен 💌";
+    setTimeout(() => tg.close(), 1200);
   } catch {
-    st.textContent = "Не получилось отправить. Закрой меню и открой его кнопкой «Выбрать процедуры» под полем ввода.";
+    tg.HapticFeedback?.notificationOccurred("error");
+    st.textContent = "Не получилось отправить. Проверь интернет и нажми ещё раз.";
+    btn.disabled = false;
   }
 }
 
@@ -299,12 +478,26 @@ function sendToBot() {
 function syncMainButton() {
   if (!inTelegram) return;
   const n = chosen().length;
+  if (document.getElementById("spa").hidden) { tg.MainButton.hide(); return; }
   if (!n || planShown) { tg.MainButton.hide(); return; }
   tg.MainButton.setParams({
     text: `Записаться (${n})`,
     color: "#e9a3b8", text_color: "#2a1420", is_visible: true, is_active: true,
   });
 }
+
+// Переключение экранов: главное меню и spa-вечер
+function showView(name) {
+  const spa = name === "spa";
+  document.getElementById("home").hidden = spa;
+  document.getElementById("spa").hidden = !spa;
+  document.body.classList.toggle("on-spa", spa);
+  window.scrollTo(0, 0);
+  if (inTelegram) { spa ? tg.BackButton.show() : tg.BackButton.hide(); }
+  syncMainButton();
+}
+document.getElementById("open-spa").addEventListener("click", () => { tg?.HapticFeedback?.impactOccurred("light"); showView("spa"); });
+document.getElementById("back").addEventListener("click", () => showView("home"));
 
 document.getElementById("done").addEventListener("click", showPlan);
 menuEl.addEventListener("change", () => {
@@ -321,6 +514,7 @@ if (inTelegram) {
   tg.setHeaderColor?.("#1d1420");
   tg.setBackgroundColor?.("#1d1420");
   tg.MainButton.onClick(showPlan);
+  tg.BackButton.onClick(() => showView("home"));
 }
 updateBar();
 </script>
