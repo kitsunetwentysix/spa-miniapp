@@ -1,0 +1,15 @@
+[Unit]
+Description=Spa mini app Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/spa-miniapp
+ExecStart=/root/spa-miniapp/.venv/bin/python bot.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
