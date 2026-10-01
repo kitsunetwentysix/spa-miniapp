@@ -67,10 +67,7 @@ section.cat { margin-top: 36px; }
 .min { font-variant-numeric: tabular-nums; color: var(--glow); font-size: 13px; white-space: nowrap; padding-top: 2px; }
 .badge { display: inline-block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--on-rose); background: var(--rose); border-radius: 99px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; font-weight: 700; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 99px; padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer; }
-.chip[aria-pressed="true"] { background: var(--glow); color: var(--on-rose); border-color: var(--glow); font-weight: 600; }
-.chip:focus-visible, button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
 
 .field { display: grid; gap: 6px; margin-top: 14px; }
 .field label { font-size: 13px; color: var(--muted); }
@@ -114,18 +111,17 @@ body.tg { padding-block-end: 90px; }
   <header>
     <div class="eyebrow">Домашний салон · только для тебя</div>
     <h1>Spa-вечер <em>для двоих</em></h1>
-    <p class="lead">Отметь процедуры, которые хочешь сегодня. Я соберу из них программу вечера по времени и всё подготовлю. Можно выбрать сколько угодно.</p>
+    <p class="lead">Отметь процедуры, которые хочешь. Я соберу из них программу вечера и всё подготовлю. Можно выбрать сколько угодно.</p>
   </header>
 
   <div id="menu"></div>
 
-  <section class="cat" aria-labelledby="h-aroma">
-    <div class="cat-head"><h2 id="h-aroma">Аромат вечера</h2><span>одно масло для лампы</span></div>
-    <div class="chips" id="aromas"></div>
-  </section>
-
   <section class="cat" aria-labelledby="h-wish">
     <div class="cat-head"><h2 id="h-wish">Детали</h2><span>по желанию</span></div>
+    <div class="field">
+      <label for="date">Когда</label>
+      <select id="date"></select>
+    </div>
     <div class="field">
       <label for="start">Во сколько начинаем</label>
       <select id="start">
@@ -159,7 +155,7 @@ const MENU = [
     { id: "steam", name: "Очищение и паровая ванночка", desc: "Тёплое полотенце, мягкая пенка", min: 10 },
     { id: "mask", name: "Маска для лица", desc: "Тканевая или глиняная, пока мы болтаем", min: 20, hit: true },
     { id: "patches", name: "Патчи под глаза", desc: "Охлаждённые в холодильнике", min: 15 },
-    { id: "gua", name: "Массаж лица роллером", desc: "Лёгкие движения от центра к вискам", min: 10 },
+    { id: "head", name: "Массаж головы", desc: "Медленно, кончиками пальцев", min: 10 },
   ]},
   { cat: "Тело", note: "главное блюдо", items: [
     { id: "back", name: "Массаж спины и плеч", desc: "С тёплым маслом, без спешки", min: 30, hit: true },
@@ -170,11 +166,6 @@ const MENU = [
     { id: "footbath", name: "Ванночка для ног", desc: "Морская соль и пара капель масла", min: 15 },
     { id: "foot", name: "Массаж стоп", desc: "После ванночки, с кремом", min: 15, hit: true },
     { id: "hands", name: "Уход за руками", desc: "Скраб, крем и массаж ладоней", min: 15 },
-    { id: "nails", name: "Покрою ногти лаком", desc: "Цвет выбираешь ты, аккуратность обещаю", min: 25 },
-  ]},
-  { cat: "Волосы", note: "", items: [
-    { id: "hairmask", name: "Маска для волос", desc: "Под полотенцем, пока идут другие процедуры", min: 20 },
-    { id: "head", name: "Массаж головы", desc: "Медленно, кончиками пальцев", min: 10 },
   ]},
   { cat: "Угощения", note: "между процедурами", items: [
     { id: "berries", name: "Клубника и шоколад", desc: "Растоплю шоколад для фондю", min: 0, hit: true },
@@ -183,7 +174,6 @@ const MENU = [
     { id: "fruit", name: "Фруктовая тарелка", desc: "Нарезанная красиво", min: 0 },
   ]},
 ];
-const AROMAS = ["Лаванда", "Иланг-иланг", "Апельсин", "Сандал", "Роза", "Без аромата"];
 const ALL = MENU.flatMap(c => c.items);
 const tickSvg = '<svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2 4.8 9 10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--on-rose)"/></svg>';
 
@@ -202,13 +192,22 @@ menuEl.innerHTML = MENU.map((c, i) => `
     </div>
   </section>`).join("");
 
-let aroma = "Лаванда";
-const aromasEl = document.getElementById("aromas");
-function drawAromas() {
-  aromasEl.innerHTML = AROMAS.map(a => `<button type="button" class="chip" aria-pressed="${a === aroma}">${a}</button>`).join("");
-}
-aromasEl.addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) { aroma = b.textContent; drawAromas(); } });
-drawAromas();
+// Даты на две недели вперёд, считая от сегодняшнего дня на её устройстве
+const dateEl = document.getElementById("date");
+const dayName = d => d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+(() => {
+  const today = new Date();
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const opt = document.createElement("option");
+    opt.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    opt.dataset.full = dayName(d);
+    const label = (i === 0 ? "Сегодня, " : i === 1 ? "Завтра, " : "") + dayName(d);
+    opt.textContent = label[0].toUpperCase() + label.slice(1);
+    dateEl.append(opt);
+  }
+})();
+const chosenDate = () => dateEl.selectedOptions[0].dataset.full;
 
 function chosen() { return ALL.filter(it => document.getElementById("p-" + it.id).checked); }
 function plural(n, a, b, c) { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c; }
@@ -226,7 +225,7 @@ function updateBar() {
 menuEl.addEventListener("change", updateBar);
 
 // Порядок вечера: атмосфера → ванна → лицо/волосы → тело → руки/ноги; угощения идут фоном
-const ORDER = ["candles","playlist","bath","steam","hairmask","mask","patches","gua","scrub","back","fullbody","head","footbath","foot","hands","nails"];
+const ORDER = ["candles","playlist","bath","steam","mask","patches","head","scrub","back","fullbody","footbath","foot","hands"];
 function buildPlan() {
   const sel = chosen();
   const [hh, mm] = document.getElementById("start").value.split(":").map(Number);
@@ -238,7 +237,7 @@ function buildPlan() {
 }
 const clock = m => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 function planText(p) {
-  const lines = ["Мой spa-вечер 💆‍♀️", `Аромат: ${aroma}`, ""];
+  const lines = ["Мой spa-вечер 💆‍♀️", `Дата: ${chosenDate()}`, ""];
   p.steps.forEach(s => lines.push(`${clock(s.at)} — ${s.it.name}`));
   if (p.treats.length) lines.push("", "Угощения: " + p.treats.map(t => t.name.toLowerCase()).join(", "));
   lines.push("", `Финал около ${clock(p.end)}`);
@@ -260,7 +259,7 @@ function showPlan() {
     <div class="ticket" id="ticket">
       <div class="eyebrow">Проверь заказ</div>
       <h2>Твоя программа</h2>
-      <div class="meta">Аромат: ${esc(aroma)} · с ${clock(p.steps[0]?.at ?? 0)} до ${clock(p.end)}</div>
+      <div class="meta">${esc(chosenDate())} · с ${clock(p.steps[0]?.at ?? 0)} до ${clock(p.end)}</div>
       <ul class="flow">
         ${p.steps.map(s => `<li><time>${clock(s.at)}</time><span>${esc(s.it.name)}</span></li>`).join("")}
         ${p.treats.length ? `<li><time>весь вечер</time><span>${esc(p.treats.map(t => t.name).join(", "))}</span></li>` : ""}
@@ -286,7 +285,7 @@ function sendToBot() {
   const payload = JSON.stringify({
     text: planText(p),
     procedures: [...p.steps.map(s => s.it.id), ...p.treats.map(t => t.id)],
-    aroma, start: document.getElementById("start").value,
+    date: dateEl.value, start: document.getElementById("start").value,
   });
   tg.HapticFeedback?.notificationOccurred("success");
   try {
