@@ -33,7 +33,7 @@ spa_keyboard = ReplyKeyboardMarkup(
 @dp.message(CommandStart())
 async def start(message: Message) -> None:
     await message.answer(
-        "Привет! Сегодня у тебя домашний spa-вечер 🕯\n"
+        "Привет! Приглашаю тебя на домашний spa-вечер 🕯\n"
         "Нажми кнопку внизу и выбери всё, чего хочется.",
         reply_markup=spa_keyboard,
     )
@@ -51,9 +51,20 @@ async def got_order(message: Message) -> None:
 
     await message.answer("Записала тебя на spa-вечер 💌 Скоро всё будет готово!", reply_markup=spa_keyboard)
 
-    if OWNER_ID and message.chat.id != OWNER_ID:
-        name = message.from_user.full_name if message.from_user else "Она"
-        await bot.send_message(OWNER_ID, f"{name} выбрала:\n\n{order['text']}")
+    if not OWNER_ID:
+        return
+    user = message.from_user
+    name = user.full_name if user else "Она"
+    username = f" (@{user.username})" if user and user.username else ""
+    received = message.date.astimezone().strftime("%d.%m %H:%M")
+    await bot.send_message(
+        OWNER_ID,
+        f"🕯 Новый заказ на spa-вечер\n"
+        f"От: {name}{username}\n"
+        f"Получен: {received}\n"
+        f"Начало: {order.get('start', '—')}\n\n"
+        f"{order['text']}",
+    )
 
 
 async def main() -> None:
