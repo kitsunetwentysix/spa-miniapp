@@ -407,7 +407,7 @@ function planText(p) {
 }
 
 // Адрес сервера, куда уходят заказы. Замени 1-2-3-4 на IP своего VPS через дефисы
-const API_URL = "https://89-208-104-140.sslip.io/order";
+const API_URL = "https://89-208-104-140.sslip.io:8443/order";
 
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const tg = window.Telegram?.WebApp;
