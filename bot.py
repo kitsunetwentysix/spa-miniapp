@@ -56,7 +56,9 @@ async def deliver_order(user: User | None, order: dict) -> None:
         await bot.send_message(user.id, "Записала тебя на spa-вечер 💌 Скоро всё будет готово!")
     if not OWNER_ID:
         return
-    name = user.full_name if user else "Она"
+    # У WebAppUser (кнопка Open) нет full_name, поэтому собираем имя сами
+    name = " ".join(filter(None, [user.first_name, user.last_name])) if user else ""
+    name = name or "Она"
     username = f" (@{user.username})" if user and user.username else ""
     received = datetime.now(TIMEZONE).strftime("%d.%m %H:%M")
     await bot.send_message(
